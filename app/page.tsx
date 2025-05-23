@@ -12,8 +12,8 @@ export default function Home() {
 
     console.log(target.spamEmail.value);
 
-    http: try {
-      const res = await fetch(`http://localhost:8000/predict`, {
+    try {
+      const res = await fetch(`https://pula-backend.onrender.com/predict`, {
         method: "POST",
         body: JSON.stringify({
           email: target.spamEmail.value,
