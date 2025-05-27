@@ -1,8 +1,17 @@
 "use client";
+import Spinner from "@/components/Spinner";
+import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
+import { DialogTitle } from "@radix-ui/react-dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import React, { useState } from "react";
 
 export default function Home() {
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [response, setResponse] = useState<null | string>(null);
+  const [loading, setLoading] = useState<null | string>(null);
+  const [history, setHistory] = useState<string[] | null>(null);
+  const [predCount, setPredCount] = useState(0);
+
   const check = async (e: React.SyntheticEvent) => {
     e.preventDefault();
 
@@ -10,9 +19,8 @@ export default function Home() {
       spamEmail: { value: string };
     };
 
-    console.log(target.spamEmail.value);
-
     try {
+      setLoading("check");
       const res = await fetch(`https://pula-backend.onrender.com/predict`, {
         method: "POST",
         body: JSON.stringify({
@@ -22,11 +30,46 @@ export default function Home() {
 
       if (res.ok) {
         const body = await res.json();
-        console.log(body);
-        setResponse(body.search);
+        setPredCount((prev) => prev + 1);
+
+        if (body.search === "Spam") {
+          setResponse("Spam Email");
+          setHistory((prev: string[] | null) => {
+            if (prev !== null) {
+              if (prev.length === 5) {
+                const newPrev = prev.slice(1, 5);
+                return [...newPrev, "Spam Email"];
+              }
+
+              return [...prev, "Spam Email"];
+            } else {
+              return ["Spam Email"];
+            }
+          });
+        }
+
+        if (body.search === "Ham") {
+          setResponse("Normal Email");
+          setHistory((prev: string[] | null) => {
+            if (prev !== null) {
+              if (prev.length === 5) {
+                const newPrev = prev.slice(1, 5);
+                return [...newPrev, "Normal Email"];
+              }
+
+              return [...prev, "Normal Email"];
+            } else {
+              return ["Normal Email"];
+            }
+          });
+        }
+
+        setDialogOpen(true);
+        setLoading(null);
       }
     } catch (error) {
       console.log(error);
+      setLoading(null);
     }
   };
 
@@ -50,19 +93,88 @@ export default function Home() {
             id="spamEmail"
             className="min-h-[20rem] h-[20rem] w-full outline-none bg-transparent border border-neutral-300 rounded-lg p-5 shadow resize-none mb-5 text-sm lg:text-md"
             placeholder="Enter content from email to predict..."
+            required
           ></textarea>
 
-          <button className="h-10 bg-emerald-600 rounded w-32 text-white text-sm font-semibold cursor-pointer hover:bg-emerald-700 self-end">
-            Check
+          <button
+            className={`h-10 flex items-center justify-center gap-2 bg-neutral-900 rounded w-full lg:w-48 text-white text-sm font-semibold cursor-pointer hover:bg-emerald-700 self-end ${
+              loading !== null ? "opacity-50 pointer-events-none" : ""
+            }`}
+            disabled={loading !== null}
+          >
+            {loading == null ? (
+              <>
+                <span>Predict Email</span>
+              </>
+            ) : (
+              <>
+                <span>Checking Email</span>
+                <Spinner className="size-5" />
+              </>
+            )}
           </button>
 
-          <div className="text-2xl">{response}</div>
+          {/* <div className="text-2xl">{response}</div> */}
         </form>
 
-        <div className="hidden lg:flex w-2/5 h-[20rem] bg-neutral-100 p-5 rounded-md">
-          Sidebar
+        <div className="hidden lg:block w-2/5 h-[20rem] border p-5 rounded-md">
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-semibold text-gray-800">Predictions</div>
+
+            {history !== null ? (
+              <div className="text-sm text-gray-600">Total: {predCount}</div>
+            ) : (
+              ""
+            )}
+          </div>
+
+          {history?.map((item, key) => {
+            return (
+              <div
+                key={key}
+                className={`w-full h-8 mb-2 text-xs px-2 flex items-center ${
+                  item === "Spam Email"
+                    ? "bg-red-200 text-red-700"
+                    : "bg-emerald-200 text-emerald-700"
+                } font-medium rounded-sm`}
+              >
+                Possibly {item}
+              </div>
+            );
+          })}
         </div>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent
+          className={`w-[15rem] ${
+            response === "Spam Email"
+              ? "bg-gradient-to-br from-red-700 to-red-600 border border-red-600 shadow-red-900"
+              : "bg-gradient-to-br from-emerald-700 to-emerald-600 border border-emerald-600 shadow-emerald-900"
+          }`}
+        >
+          <VisuallyHidden>
+            <DialogTitle>Prediction Alert</DialogTitle>
+          </VisuallyHidden>
+          <div
+            className={`text-2xl lg:text-3xl font-bold text-center leading-none ${
+              response === "Spam Email" ? "text-red-50" : "text-emerald-50"
+            } tracking-tight font-sans text-shadow-xs`}
+          >
+            {response === "Spam Email" ? "Spam Email" : "Test Passed"}
+          </div>
+
+          <div
+            className={`text-center leading-[1.25rem] text-shadow-xs ${
+              response === "Spam Email" ? "text-red-50" : "text-emerald-50"
+            }`}
+          >
+            {response === "Spam Email"
+              ? "Email provided is possibly a spam email."
+              : "Email provided is possibly a normal email."}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
