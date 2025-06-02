@@ -3,7 +3,9 @@ import Spinner from "@/components/Spinner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import React, { useState } from "react";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+import React, { useRef, useState } from "react";
 
 export default function Home() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -11,6 +13,8 @@ export default function Home() {
   const [loading, setLoading] = useState<null | string>(null);
   const [history, setHistory] = useState<string[] | null>(null);
   const [predCount, setPredCount] = useState(0);
+
+  const form = useRef<HTMLFormElement>(null);
 
   const check = async (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -74,20 +78,32 @@ export default function Home() {
   };
 
   return (
-    <div className="w-full flex flex-col items-center font-sans mt-20">
+    <div className="w-full flex flex-col items-center font-sans mt-10 lg:mt-20">
       {/* Heading */}
       <h1 className=" text-4xl lg:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-700 font-extrabold tracking-tight mb-2">
         Email Spam Filter
       </h1>
 
-      <p className="w-full lg:w-[35%] px-5 text-sm text-gray-600 mb-10 text-center">
-        Please paste a substancial number of text from any part of your email
-        content for accuracy.
+      {/* Description */}
+      <p className="w-full lg:w-[35%] px-5 text-sm text-gray-600 mb-2 text-center">
+        Predict the likelihood of spam english emails with ease.
       </p>
+
+      {/* Documentation Link */}
+      <Link href={"/docs"} className="mb-5">
+        <div className="text-emerald-600 font-semibold flex items-center gap-2">
+          <span>Documentation & Guides</span>
+          <ArrowRight size={16} strokeWidth={2} />
+        </div>
+      </Link>
 
       {/* Content */}
       <div className="flex w-full px-5 lg:w-6/10 lg:gap-4">
-        <form className="w-full lg:w-3/5 flex flex-col" onSubmit={check}>
+        <form
+          className="w-full lg:w-3/5 flex flex-col"
+          onSubmit={check}
+          ref={form}
+        >
           <textarea
             name="spamEmail"
             id="spamEmail"
@@ -96,25 +112,32 @@ export default function Home() {
             required
           ></textarea>
 
-          <button
-            className={`h-10 flex items-center justify-center gap-2 bg-neutral-900 rounded w-full lg:w-48 text-white text-sm font-semibold cursor-pointer hover:bg-emerald-700 self-end ${
-              loading !== null ? "opacity-50 pointer-events-none" : ""
-            }`}
-            disabled={loading !== null}
-          >
-            {loading == null ? (
-              <>
-                <span>Predict Email</span>
-              </>
-            ) : (
-              <>
-                <span>Checking Email</span>
-                <Spinner className="size-5" />
-              </>
-            )}
-          </button>
-
-          {/* <div className="text-2xl">{response}</div> */}
+          <div className="flex items-center justify-end flex-wrap gap-2 lg:gap-5">
+            <button
+              onClick={() => form.current?.reset()}
+              type="button"
+              className="h-10 lg:w-48 w-full border-2 bg-transparent rounded-md cursor-pointer hover:bg-gray-100 text-gray-600 text-sm font-semibold"
+            >
+              Clear Input
+            </button>
+            <button
+              className={`h-10 flex items-center justify-center gap-2 bg-neutral-900 rounded-md w-full lg:w-48 text-white text-sm font-semibold cursor-pointer hover:bg-emerald-700 self-end ${
+                loading !== null ? "opacity-50 pointer-events-none" : ""
+              }`}
+              disabled={loading !== null}
+            >
+              {loading == null ? (
+                <>
+                  <span>Predict Email</span>
+                </>
+              ) : (
+                <>
+                  <span>Checking Email</span>
+                  <Spinner className="size-5" />
+                </>
+              )}
+            </button>
+          </div>
         </form>
 
         <div className="hidden lg:block w-2/5 h-[20rem] border p-5 rounded-md">
@@ -144,7 +167,6 @@ export default function Home() {
           })}
         </div>
       </div>
-
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent
           className={`w-[15rem] ${
